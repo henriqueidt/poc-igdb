@@ -1,0 +1,17 @@
+.game-input__popover {
+  background-color: white;
+}
+
+.game-input__list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.game-input__option {
+  cursor: pointer;
+}
+
+.game-input__option:hover {
+  background-color: aquamarine;
+}
