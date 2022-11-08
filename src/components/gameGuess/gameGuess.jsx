@@ -1,28 +1,23 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../utils/hooks/auth/useAuth";
+import {
+  addGameToStore,
+  getLastGamePlayed,
+} from "../../utils/hooks/games/gamesStorage";
 import GameCover from "../gameCover/gameCover";
 import GameInput from "../gameInput/gameInput";
+import "./gameGuess.css";
+
+const initialPixelation = 0.1;
 
 function GameGuess() {
-  const [authData, setAuthData] = useState();
-  const [coverInfo, setCoverInfo] = useState({
-    game: "1",
-  });
+  const [coverInfo, setCoverInfo] = useState(getLastGamePlayed());
+  const [pixelation, setPixelation] = useState(initialPixelation);
+  const [attempts, setAttempts] = useState(0);
 
-  const login = async () => {
-    try {
-      const authData = await fetch(
-        "https://id.twitch.tv/oauth2/token?client_id=z6eg9t0uabn96tvt7l8yibmaff8n0w&client_secret=7wenmu85erti1niritenv3s92pgbs3&grant_type=client_credentials",
-        {
-          method: "POST",
-        }
-      );
+  const { authState } = useAuth();
 
-      const auth = await authData.json();
-      setAuthData(auth);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const { access_token: accessToken } = authState;
 
   const getCover = async () => {
     try {
@@ -33,7 +28,7 @@ function GameGuess() {
           headers: {
             Accept: "application/json",
             "Client-ID": "z6eg9t0uabn96tvt7l8yibmaff8n0w",
-            Authorization: `Bearer ${authData.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: `fields game,url;limit 1; where game > ${coverInfo.game};`,
         }
@@ -47,23 +42,55 @@ function GameGuess() {
   };
 
   useEffect(() => {
-    login();
-  }, []);
+    if (accessToken) {
+      getCover();
+    }
+  }, [accessToken]);
+
+  const resetPixelation = () => {
+    setPixelation(initialPixelation);
+  };
+
+  const resetAttempts = () => {
+    setAttempts(0);
+  };
+
+  const increaseAttempts = () => {
+    setAttempts(attempts + 1);
+  };
+
+  const revealMoreImage = () => {
+    if (pixelation < 1) {
+      setPixelation(pixelation + 0.1);
+    }
+  };
+
+  const resetGame = () => {
+    resetPixelation();
+    resetAttempts();
+    getCover();
+  };
 
   const onSelectGame = ({ game }) => {
     if (game === coverInfo.game) {
       alert("success");
-      getCover();
+      addGameToStore({ ...coverInfo, attempts });
+      resetGame();
+    } else {
+      revealMoreImage();
+      increaseAttempts();
     }
   };
 
   return (
-    <div>
+    <div className="game-guess">
       <h1>Guess the game</h1>
-      {authData?.access_token ? (
+      Attempts: {attempts}
+      {accessToken ? (
         <>
-          <GameInput {...{ authData, onSelectGame }} />
-          <GameCover {...{ authData, coverInfo, getCover }} />
+          <GameInput {...{ accessToken, onSelectGame }} />
+          <button onClick={resetGame}>skip</button>
+          <GameCover {...{ coverInfo, pixelation }} />
         </>
       ) : null}
     </div>

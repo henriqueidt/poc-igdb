@@ -1,0 +1,4 @@
+.game-guess {
+  display: flex;
+  flex-direction: column;
+}

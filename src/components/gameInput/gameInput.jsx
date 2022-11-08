@@ -7,9 +7,15 @@ import {
   ComboboxOption,
 } from "@reach/combobox";
 import "./gameInput.css";
+import { useDebounce } from "../../utils/hooks/useDebounce";
 
-function GameInput({ authData, onSelectGame }) {
+function GameInput({ accessToken, onSelectGame }) {
   const [searchTerm, setSearchTerm] = useState("");
+
+  const debouncedSetSearchTerm = useDebounce(
+    (event) => setSearchTerm(event.target.value),
+    200
+  );
 
   const useGameSearch = (searchTerm) => {
     const [games, setGames] = useState([]);
@@ -31,7 +37,7 @@ function GameInput({ authData, onSelectGame }) {
   const handleSearchTermChange = (event) => {
     const { value } = event.target;
     if (value.length > 3) {
-      setSearchTerm(event.target.value);
+      debouncedSetSearchTerm(event);
     }
   };
 
@@ -47,7 +53,7 @@ function GameInput({ authData, onSelectGame }) {
         headers: {
           Accept: "application/json",
           "Client-ID": "z6eg9t0uabn96tvt7l8yibmaff8n0w",
-          Authorization: `Bearer ${authData.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: `fields name,game;where name ~ "${value}"*;`,
       }
